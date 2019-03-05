@@ -7,7 +7,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
-	"github.com/robbiet480/cloudflare-go"
+	cloudflare "github.com/robbiet480/cloudflare-go"
 )
 
 // ZoneExporter collects metrics for a Cloudflare zone.
@@ -375,7 +375,7 @@ func (e *ZoneExporter) Collect(ch chan<- prometheus.Metric) {
 
 func (e *ZoneExporter) collectDashboardAnalytics(ch chan<- prometheus.Metric) {
 	now := time.Now()
-	sinceTime := now.Add(-10080 * time.Minute).UTC() // 7 days
+	sinceTime := now.Add(-3080 * time.Minute).UTC() // 7 days
 	if e.zone.Plan.LegacyID == "enterprise" {
 		sinceTime = now.Add(-30 * time.Minute).UTC() // Anything higher than business gets 1 minute resolution, minimum -30 minutes
 	} else if e.zone.Plan.LegacyID == "business" {
@@ -411,6 +411,12 @@ func (e *ZoneExporter) collectDashboardAnalytics(ch chan<- prometheus.Metric) {
 		}
 
 		latestEntry := entry.Timeseries[len(entry.Timeseries)-1]
+
+		for _, e := range entry.Timeseries {
+			log.Infoln("Getting data for since", e.Since)
+			log.Infoln("Getting data for until", e.Until)
+			log.Infoln("Getting data for zone ", e.Requests.All)
+		}
 
 		ch <- prometheus.MustNewConstMetric(e.allRequests, prometheus.GaugeValue, float64(latestEntry.Requests.All), labels...)
 		ch <- prometheus.MustNewConstMetric(e.cachedRequests, prometheus.GaugeValue, float64(latestEntry.Requests.Cached), labels...)
